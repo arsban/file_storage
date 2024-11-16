@@ -1,0 +1,48 @@
+@startuml
+
+autonumber
+
+actor User1 as "Author"
+actor User2 as "Reader"
+participant "Web Browser \n(Client)" as Client
+participant "Web Server" as Server
+participant "File Storage" as Storage
+database "Database" as DB
+
+User1 -> Client: Open Knowledge Base Editor
+Client -> Server: Request Editor
+Server -> Client: Load Editor
+
+User1 -> Client: Write Article \n(+ Optional Images)
+Client -> Server: HTTP POST /saveArticle
+note right: Text and potential \nmultimedia in form-data
+
+alt Article with Images
+    Server -> Server: Process Article\nand Extract Images
+    Server -> Storage: Save Image Files
+    note right: Save each image \nseparately
+    Server -> Server: Generate Image URLs
+    Server -> DB: Save Text \nwith Image URLs
+else Article without Images
+    Server -> DB: Save Text Only
+end
+
+DB -> Server: Confirmation
+Server -> Client: Article Saved Successfully
+
+== Article Rendering ==
+
+User2 -> Client: Open Article
+Client -> Server: HTTP GET /article/{id}
+Server -> DB: Fetch Article (+ Image URLs if present)
+DB -> Server: Send Article Data
+Server -> Client: Send Article (+ Image URLs if any)
+
+alt Article with Images
+    Client -> Storage: Fetch Image Data
+    Client -> User2: Display Article with Images
+else Article without Images
+    Client -> User2: Display Article Text Only
+end
+
+@enduml
